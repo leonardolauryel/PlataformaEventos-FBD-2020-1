@@ -1,0 +1,328 @@
+DROP TABLE IF EXISTS Organizacao;
+DROP TABLE IF EXISTS Conducao;
+DROP TABLE IF EXISTS Inscricao;
+DROP TABLE IF EXISTS Interesse;
+DROP TABLE IF EXISTS Pertence;
+DROP TABLE IF EXISTS Validacao;
+DROP TABLE IF EXISTS Contratacao;
+
+DROP TABLE IF EXISTS Servico;
+DROP TABLE IF EXISTS Telefone; 
+DROP TABLE IF EXISTS Funcionario;
+DROP TABLE IF EXISTS Certificado;
+DROP TABLE IF EXISTS Categoria;
+DROP TABLE IF EXISTS Evento;
+DROP TABLE IF EXISTS Organizador;
+DROP TABLE IF EXISTS Condutor;
+DROP TABLE IF EXISTS Participante;
+DROP TABLE IF EXISTS Usuario;
+DROP TABLE IF EXISTS Endereco;
+
+
+
+CREATE TABLE Usuario ( 
+ id SERIAL PRIMARY KEY NOT NULL,
+ cpf CHAR(11) UNIQUE NOT NULL,
+ nome VARCHAR(60) NOT NULL,
+ email VARCHAR(60) UNIQUE NOT NULL,
+ senha VARCHAR(60) NOT NULL,
+ idEndereco INTEGER NOT NULL
+); 
+
+CREATE TABLE Organizador ( 
+ compr_ident VARCHAR(200) NOT NULL,
+ compr_end VARCHAR(200) NOT NULL,
+ idUsuario INTEGER PRIMARY KEY NOT NULL
+); 
+
+CREATE TABLE Condutor ( 
+ tipo_condutor VARCHAR(30) NOT NULL,
+ associacao VARCHAR(60),
+ idUsuario INTEGER PRIMARY KEY NOT NULL
+); 
+
+CREATE TABLE Participante ( 
+ idUsuario INTEGER PRIMARY KEY NOT NULL
+); 
+
+CREATE TABLE Endereco (
+ id SERIAL PRIMARY KEY NOT NULL,
+ rua VARCHAR(40) NOT NULL,
+ num VARCHAR(6) NOT NULL,
+ bairro VARCHAR(40) NOT NULL,
+ cep VARCHAR(9) NOT NULL,
+ cidade VARCHAR(40) NOT NULL,
+ estado VARCHAR(30) NOT NULL,
+ pais VARCHAR(40) NOT NULL,
+ tipo_end VARCHAR(7) NOT NULL,
+ CHECK(tipo_end IN('usuário', 'evento'))
+); 
+
+CREATE TABLE Telefone (
+ id SERIAL PRIMARY KEY NOT NULL,  
+ num_tel VARCHAR(15) NOT NULL,
+ idUsuario INTEGER NOT NULL
+); 
+
+CREATE TABLE Funcionario (
+ id SERIAL PRIMARY KEY NOT NULL,
+ nome VARCHAR(60) NOT NULL,
+ setor VARCHAR(30) NOT NULL,
+ chefe VARCHAR(30) NOT NULL
+);
+
+CREATE TABLE Certificado (
+ id SERIAL PRIMARY KEY NOT NULL,
+ carga_hr NUMERIC NOT NULL,
+ tipo_cert VARCHAR(12) NOT NULL,
+ data_hora_emissao TIMESTAMP WITH TIME ZONE NOT NULL,
+ autenticacao_eletr VARCHAR(30) UNIQUE NOT NULL,
+ idUsuario INTEGER,
+ idEvento INTEGER,
+ CHECK(tipo_cert IN('organização', 'condução', 'participação'))
+); 
+
+CREATE TABLE Categoria (
+ id SERIAL PRIMARY KEY NOT NULL,
+ nome VARCHAR(40) NOT NULL,
+ area VARCHAR(40) NOT NULL,
+ UNIQUE(nome, area)
+);
+
+CREATE TABLE Evento (
+ id SERIAL PRIMARY KEY NOT NULL,
+ nome VARCHAR(60) NOT NULL,
+ valor NUMERIC,
+ data_hora_realizacao TIMESTAMP WITH TIME ZONE NOT NULL,
+ data_hora_criacao TIMESTAMP WITH TIME ZONE NOT NULL,
+ privacidade VARCHAR(7) NOT NULL,
+ idEndereco INTEGER NOT NULL,
+ CHECK(privacidade IN('público', 'privado'))
+);
+
+CREATE TABLE Servico ( 
+ id SERIAL PRIMARY KEY NOT NULL,
+ nome VARCHAR(60) NOT NULL,
+ empresa VARCHAR(30) NOT NULL,
+ descricao VARCHAR(100),
+ UNIQUE(nome, empresa)
+);
+
+CREATE TABLE Organizacao (
+ idOrganizador INTEGER NOT NULL,
+ idEvento INTEGER NOT NULL,
+ PRIMARY KEY(idOrganizador, idEvento)
+); 
+
+CREATE TABLE Conducao (
+ idCondutor INTEGER NOT NULL,
+ idEvento INTEGER NOT NULL,
+ PRIMARY KEY(idCondutor, idEvento)
+);
+
+CREATE TABLE Inscricao (
+ idParticipante INTEGER NOT NULL,
+ idEvento INTEGER NOT NULL,
+ num_inscricao SERIAL UNIQUE,
+ situacao VARCHAR(8),
+ PRIMARY KEY(idParticipante, idEvento),
+ CHECK(situacao IN('pendente', 'pago'))
+); 
+
+CREATE TABLE Interesse (
+ idParticipante INTEGER NOT NULL,
+ idCategoria INTEGER NOT NULL,
+ PRIMARY KEY(idParticipante, idCategoria)
+); 
+
+CREATE TABLE Pertence (
+ idCategoria INTEGER NOT NULL,
+ idEvento INTEGER NOT NULL,
+ PRIMARY KEY(idCategoria, idEvento)
+);
+
+CREATE TABLE Validacao (
+ idFuncionario INTEGER,
+ idOrganizador INTEGER NOT NULL,
+ data_hora TIMESTAMP WITH TIME ZONE NOT NULL,
+ aprovado BOOLEAN,
+ PRIMARY KEY(data_hora, idOrganizador)
+);
+
+CREATE TABLE Contratacao (
+ idEvento INTEGER NOT NULL,
+ idServico INTEGER NOT NULL,
+ data_hora_contratacao TIMESTAMP WITH TIME ZONE NOT NULL,
+ PRIMARY KEY(idEvento, idServico)
+); 
+
+ALTER TABLE Usuario ADD FOREIGN KEY(idEndereco) REFERENCES Endereco (id) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE Organizador ADD FOREIGN KEY(idUsuario) REFERENCES Usuario (id) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE Condutor ADD FOREIGN KEY(idUsuario) REFERENCES Usuario (id) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE Participante ADD FOREIGN KEY(idUsuario) REFERENCES Usuario (id) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE Telefone ADD FOREIGN KEY(idUsuario) REFERENCES Usuario (id) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE Certificado ADD FOREIGN KEY(idUsuario) REFERENCES Usuario (id) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE Certificado ADD FOREIGN KEY(idEvento) REFERENCES Evento (id) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE Evento ADD FOREIGN KEY(idEndereco) REFERENCES Endereco (id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE Organizacao ADD FOREIGN KEY(idOrganizador) REFERENCES Organizador (idUsuario) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE Organizacao ADD FOREIGN KEY(idEvento) REFERENCES Evento (id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE Conducao ADD FOREIGN KEY(idCondutor) REFERENCES Condutor (idUsuario) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE Conducao ADD FOREIGN KEY(idEvento) REFERENCES Evento (id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE Inscricao ADD FOREIGN KEY(idParticipante) REFERENCES Participante (idUsuario) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE Inscricao ADD FOREIGN KEY(idEvento) REFERENCES Evento (id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE Interesse ADD FOREIGN KEY(idParticipante) REFERENCES Participante (idUsuario) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE Interesse ADD FOREIGN KEY(idCategoria) REFERENCES Categoria (id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE Pertence ADD FOREIGN KEY(idCategoria) REFERENCES Categoria (id) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE Pertence ADD FOREIGN KEY(idEvento) REFERENCES Evento (id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE Validacao ADD FOREIGN KEY(idFuncionario) REFERENCES Funcionario (id) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE Validacao ADD FOREIGN KEY(idOrganizador) REFERENCES Organizador (idUsuario) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE Contratacao ADD FOREIGN KEY(idEvento) REFERENCES Evento (id) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE Contratacao ADD FOREIGN KEY(idServico) REFERENCES Servico (id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Inserindo Endereços (100)
+INSERT INTO Endereco (rua,num,bairro,cep,cidade,pais,estado,tipo_end) VALUES ('Ap #997-3365 Elementum, Ave','754','BR','065383960','Sasaram','Montserrat','Hatay','evento'),('P.O. Box 931, 3275 Mauris Road','385','Bolívar','761291101','Magangué','Djibouti','Vologda Oblast','usuário'),('Ap #861-5002 Ut St.','183','MA','465311500','Alcalá de Henares','Antarctica','L','usuário'),('567-5761 Eget Avenue','654','Vlaams-Brabant','219722490','Itterbeek','Libya','Metropolitana de Santiago','usuário'),('154-266 Ut Road','961','ON','401481516','Cornwall','Oman','WA','evento'),('621-7750 Sem Street','037','Berlin','140575452','Berlin','Germany','Connacht','evento'),('Ap #794-8057 Aenean Street','704','AB','539783362','Hines Creek','United States Minor Outlying Islands','NW','evento'),('129-7699 Aenean Rd.','619','Central Java','264606659','Semarang','Iran','Vienna','evento'),('P.O. Box 483, 2823 A Rd.','195','Gangwon','187046570','Gangneung','Kyrgyzstan','Chi','usuário'),('6290 Id, Street','913','Gye','372279716','Hanam','Venezuela','CM','usuário');
+INSERT INTO Endereco (rua,num,bairro,cep,cidade,pais,estado,tipo_end) VALUES ('Ap #204-4166 Nascetur Rd.','286','VGG','748191792','Volgograd','Finland','Zl','evento'),('Ap #715-7647 Vivamus St.','167','Leinster','514531837','Dublin','Malawi','PM','evento'),('Ap #487-7771 Amet Rd.','070','LIM','410278097','Lima','South Georgia and The South','Wisconsin','usuário'),('Ap #312-415 Aliquam Avenue','228','Jal','825594230','Zapopan','Qatar','Khyber Pakhtoonkhwa','evento'),('752-3101 Tortor Rd.','893','LAL','128870263','Trujillo','Bahrain','Gye','evento'),('6954 Tincidunt, Street','631','ANT','499948030','Envigado','French Southern Territories','Istanbul','usuário'),('768-8777 Nam Ave','743','Veracruz','449810585','Poza Rica','Cuba','Minas Gerais','evento'),('357-4354 Nibh. Av.','853','BC','942647653','Sparwood','Mayotte','H','evento'),('3804 Lacus. Rd.','489','Ontario','926493778','Minto','Monaco','RS','usuário'),('P.O. Box 225, 1245 Justo. Rd.','883','Alajuela','689739189','Quesada','Sao Tome and Principe','Gujarat','evento');
+INSERT INTO Endereco (rua,num,bairro,cep,cidade,pais,estado,tipo_end) VALUES ('886-246 Justo Rd.','085','South Chungcheong','574871006','Daejeon','Denmark','NI','usuário'),('7158 Fusce Avenue','100','CA','750626174','Sabadell','Palestine, State of','Wie','evento'),('Ap #273-2454 Cras St.','021','PV','379913620','Gasteiz','Ethiopia','Namen','evento'),('198-2371 Pharetra. Avenue','501','B.C','334247936','La Paz','South Africa','KA','usuário'),('P.O. Box 698, 6432 Cubilia St.','593','North Island','076150836','Waiuku','Saint Helena, Ascension','Friesland','evento'),('7259 Molestie Ave','624','SO','630457014','Sokoto','Malawi','PIU','usuário'),('4751 Malesuada. Road','153','DS','270308996','Wrocław','Turkmenistan','Pomorskie','evento'),('763-9021 Lorem, Ave','415','ARE','386643637','Arequipa','Japan','IX','usuário'),('Ap #386-5768 Velit. St.','543','SJ','525778801','San Pedro','Taiwan','Missouri','usuário'),('969-5203 Parturient St.','999','Luik','295093839','Herstal','Western Sahara','Queensland','evento');
+INSERT INTO Endereco (rua,num,bairro,cep,cidade,pais,estado,tipo_end) VALUES ('Ap #581-4034 Erat Street','552','São Paulo','140323747','Ribeirão Preto','Barbados','Arkansas','usuário'),('Ap #940-1023 Egestas Av.','682','H','770149042','Mercedes','Kiribati','Toscana','evento'),('Ap #435-2589 Ipsum. St.','717','ARE','667672161','Arequipa','Turkey','Antioquia','evento'),('Ap #508-3975 Neque Ave','577','L','796252521','Dublin','Sao Tome and Principe','AB','evento'),('637-791 Fringilla Avenue','104','SP','090194102','Diadema','Equatorial Guinea','ON','evento'),('300 Ipsum Av.','989','Puebla','303817321','Tehuacán','Congo, the Democratic Republic of the','PIU','evento'),('3619 Sit Ave','613','BA','188567935','Alençon','Korea, South','QLD','evento'),('163-3333 Ac St.','117','NL','972677782','Fortune','Iran','JB','evento'),('670-2921 Quam. Av.','399','Utah','133809037','Provo','Chile','Sląskie','evento'),('4440 Ornare St.','637','CAJ','545866303','Jaén','Bonaire, Sint Eustatius and Saba','CV','usuário');
+INSERT INTO Endereco (rua,num,bairro,cep,cidade,pais,estado,tipo_end) VALUES ('7823 Euismod Rd.','764','N.','105600500','Heerhugowaard','Suriname','Bolívar','usuário'),('P.O. Box 675, 3456 Ut Av.','960','NA','069179067','Champion','Gambia','Dolnośląskie','evento'),('5561 Sit St.','036','Michoacán','496617229','Uruapan','Paraguay','Oklahoma','evento'),('168-4630 Eget, Avenue','222','Atlántico','193237292','Sabanalarga','Turkmenistan','São Paulo','usuário'),('Ap #829-326 Mi. Ave','276','Belgorod Oblast','065744783','Valuyki','Korea, North','Junín','usuário'),('922 Ad Av.','992','Katsina','819502247','Funtua','Saint Barthélemy','OH','evento'),('9202 Consectetuer, Avenue','535','Victoria','440289318','Bairnsdale','Romania','Clackmannanshire','usuário'),('209-9592 Lacus. St.','637','FATA','661893653','Khyber Agency','Mayotte','Diyarbakır','usuário'),('P.O. Box 737, 9187 Nibh. Avenue','131','A','738846176','San Rafael','Zimbabwe','NI','usuário'),('P.O. Box 334, 6764 Amet Rd.','555','BE','297318240','Berlin','Antarctica','Brussels Hoofdstedelijk Gewest','evento');
+INSERT INTO Endereco (rua,num,bairro,cep,cidade,pais,estado,tipo_end) VALUES ('594 Egestas Rd.','340','Azad Kashmir','403648551','Muzzafarabad','Iceland','São Paulo','usuário'),('Ap #155-8812 Ut Street','719','Gye','746942368','Tongyeong','Sint Maarten','BE','evento'),('Ap #938-646 Egestas Rd.','639','NI','403135586','Taupo','South Sudan','LU','usuário'),('6737 Auctor St.','371','BE','794436704','Berlin','Sierra Leone','Missouri','evento'),('6544 Pede, St.','566','ANT','566837752','Itagüí','French Southern Territories','Henegouwen','evento'),('P.O. Box 271, 6008 Mauris Rd.','727','Ver','748671844','Boca del Río','Uzbekistan','Ontario','evento'),('7774 Quisque Rd.','481','AN','439974238','Rijkevorsel','Tajikistan','LO','usuário'),('8079 Tristique Rd.','563','Coquimbo','954731858','Punitaqui','Northern Mariana Islands','Sokoto','evento'),('P.O. Box 357, 6445 Morbi Road','455','Idaho','936902632','Nampa','Gibraltar','Uttar Pradesh','evento'),('1608 Dis Ave','109','North Island','374635034','Auckland','Germany','ON','usuário');
+INSERT INTO Endereco (rua,num,bairro,cep,cidade,pais,estado,tipo_end) VALUES ('8400 Turpis Street','474','MA','417932680','Radom','Malawi','A','usuário'),('985-224 Dolor Street','581','Andalucía','799507752','Huelva','Nauru','Jigawa','usuário'),('7459 Quisque St.','311','North Island','218950698','Dannevirke','Qatar','IL','evento'),('837-3664 Donec Rd.','468','Illinois','172752690','Rockford','Iran','NV','evento'),('Ap #841-3553 Dolor. St.','961','HH','122810874','Hamburg','Niger','Balochistan','usuário'),('P.O. Box 115, 6534 Mauris, St.','604','Rio de Janeiro','646223113','São Gonçalo','Djibouti','Punjab','usuário'),('668-7051 Praesent Rd.','328','SO','084891508','Sokoto','Zimbabwe','PA','usuário'),('3759 Interdum St.','769','SJ','575394923','Calle Blancos','Western Sahara','VIC','evento'),('Ap #306-6838 Et Road','216','H','332929019','Ulloa (Barrial)','Liechtenstein','AL','usuário'),('107-9698 Euismod Rd.','662','Jal','960518827','Tonalá','Hungary','San José','evento');
+INSERT INTO Endereco (rua,num,bairro,cep,cidade,pais,estado,tipo_end) VALUES ('500 Laoreet Street','130','British Columbia','874555789','Duncan','Tuvalu','Małopolskie','usuário'),('Ap #398-1364 Ornare St.','602','LOM','616043562','Calco','Papua New Guinea','Antalya','usuário'),('6447 Curabitur St.','005','NSW','290715638','Sydney','Northern Mariana Islands','Sverdlovsk Oblast','evento'),('5939 Ipsum Ave','838','Ank','284802676','Polatlı','Bahrain','North Chungcheong','usuário'),('Ap #359-3398 Tellus Rd.','032','A','683043012','Alajuela','Namibia','Adana','evento'),('7584 Aliquam Rd.','424','MA','748122276','Alcalá de Henares','Iran','Vienna','evento'),('Ap #695-791 Parturient Ave','096','Antioquia','080418907','Apartadó','Virgin Islands, British','Cajamarca','usuário'),('219-844 Sem Rd.','794','MAG','246876398','Fundación','Madagascar','Quebec','usuário'),('P.O. Box 664, 4897 Magna. Rd.','954','Queensland','075286995','Cairns','Lithuania','Imo','usuário'),('301-3685 Ornare, St.','479','Ov','402582877','Zwolle','Bonaire, Sint Eustatius and Saba','Ov','usuário');
+INSERT INTO Endereco (rua,num,bairro,cep,cidade,pais,estado,tipo_end) VALUES ('Ap #905-7398 Augue St.','570','Gl','802478437','Hattem','Netherlands','Sicilia','evento'),('Ap #450-4224 Vestibulum Avenue','785','Wie','641051220','Vienna','Bahamas','Azad Kashmir','evento'),('Ap #390-8678 Donec Road','792','BE','540479268','Berlin','Côte DIvoire (Ivory Coast)','Bahia','evento'),('1412 Non, Av.','920','Zuid Holland','170506690','Alphen aan den Rijn','United Kingdom (Great Britain)','SL','usuário'),('P.O. Box 232, 6106 Malesuada. St.','960','LX','431669563','Saint-Vincent','Niue','Veracruz','evento'),('Ap #105-1933 Ipsum Street','716','Lazio','265374788','Mazzano Romano','Ghana','Metropolitana de Santiago','usuário'),('P.O. Box 985, 3441 Nec St.','837','Gye','484723055','Hanam','Kazakhstan','BO','usuário'),('Ap #121-1115 Orci St.','109','RM','844263886','Macul','Greenland','DF','evento'),('178-8117 Enim, St.','653','HI','618890584','Kailua','Cambodia','BC','evento'),('P.O. Box 665, 6498 Massa. Av.','717','UP','049146752','Pilibhit','Christmas Island','Mississippi','evento');
+INSERT INTO Endereco (rua,num,bairro,cep,cidade,pais,estado,tipo_end) VALUES ('P.O. Box 106, 9169 Phasellus Av.','474','JT','977271244','Semarang','Uruguay','Jeo','evento'),('P.O. Box 683, 3797 Nibh Rd.','442','East Java','988024953','Probolinggo','Fiji','Campania','usuário'),('P.O. Box 873, 4672 Gravida Road','432','Ontario','356395070','Midlands','Indonesia','IL','evento'),('Ap #438-785 Fusce St.','095','Catalunya','862860752','Barcelona','Niue','Wie','evento'),('8777 Metus Road','769','Belgorod Oblast','053975736','Valuyki','Georgia','A','evento'),('P.O. Box 105, 5685 Nec Ave','449','BC','370475914','Stewart','Antigua and Barbuda','ANT','evento'),('927-1211 Eu, Rd.','577','Diyarbakır','871896379','Bismil','Liechtenstein','Andalucía','usuário'),('P.O. Box 745, 8828 Egestas. Av.','640','Wie','303358830','Vienna','Cuba','Minas Gerais','usuário'),('P.O. Box 490, 6500 Vitae Street','524','Munster','963293268','Cork','Cameroon','North Gyeongsang','usuário'),('P.O. Box 880, 2603 Mauris Rd.','648','WM','995383014','Ełk','Barbados','ON','usuário');
+
+-- Inserindo Usuários (100)
+INSERT INTO Usuario (cpf,nome,email,senha,idEndereco) VALUES ('32527297263','Xanthus Chandler','a@Maurisvel.org','VFR15DDH9OB',55),('74022244118','Burton Banks','parturient.montes@aliquetmolestietellus.co.uk','JNX04RIZ0JW',37),('35122271528','Yuli Maynard','Quisque@nisiCum.org','CFS13FGC7YI',45),('85979441709','Tucker Mann','Etiam.gravida@risusa.edu','WNV07CAQ3XS',3),('58172314505','Jamalia Ross','tellus.justo@id.com','IDI72LDO9QM',20),('24480096632','Sara Galloway','ut@arcuSed.co.uk','NXT79YVC8TN',69),('82410801877','Cadman Hogan','arcu@gravidanunc.ca','UGZ63PNQ0DC',19),('43161221394','Allistair Nunez','vulputate.eu@interdumlibero.org','VTK22WFN5HD',90),('08504542643','Mannix Trevino','neque.Nullam@seddictumeleifend.com','KCE02NOZ6RQ',80),('31979840492','Mason Chaney','vehicula.et@vehicularisusNulla.ca','HWK69OTD7IA',1);
+INSERT INTO Usuario (cpf,nome,email,senha,idEndereco) VALUES ('01447619278','Riley Spencer','nec@Aliquamornare.com','FZI40DJI6II',61),('45546520572','Ignacia Anderson','odio.vel@pretiumetrutrum.ca','SBU78OLY3LL',10),('05167853477','Leandra Yates','magna.Ut.tincidunt@diamloremauctor.edu','FXL88HMF9HQ',92),('61968181619','Jessica Roberts','tellus.eu@Nuncuterat.org','JDZ78YFI5UA',35),('02818949032','Whilemina Murphy','Ut.semper@cursus.ca','BKF58ZOF6EG',59),('20487318551','Chloe Trujillo','mollis@Maecenasliberoest.ca','CNE24GZE0JZ',68),('99257394774','Chandler Weeks','lectus.quis@fermentum.ca','JRF94MQQ4GP',21),('55326979713','Hall Sullivan','a@risus.edu','XFM87QDM6RN',64),('08477325411','Angelica Kinney','risus.odio@loremDonecelementum.net','QFA46AFX4VZ',75),('01068952415','Sarah Nixon','cursus.et@condimentumegetvolutpat.org','SJE15HLO4NE',22);
+INSERT INTO Usuario (cpf,nome,email,senha,idEndereco) VALUES ('94202976580','Francis Preston','Aliquam@gravida.com','OOI18DHN2CH',39),('44196959982','Vaughan Farmer','et@diamProin.ca','EVU68GSG7LH',88),('74161730864','Gannon Marshall','nascetur.ridiculus.mus@neque.net','DBA72RNE4UJ',74),('96479194268','Perry Pate','Quisque.nonummy@ametmassa.ca','PZU92NIR5YL',33),('44852317595','Driscoll Norman','euismod.in@elitafeugiat.net','MOQ78IEH8QY',43),('93525765673','Candice Witt','Pellentesque@primisinfaucibus.edu','IAP88HRS2HQ',85),('73213401002','Price Cook','elit.erat@risusaultricies.co.uk','WTS16HCG5NA',57),('76362838741','Isabelle Monroe','vestibulum.massa@sagittisNullamvitae.co.uk','OLH47TNQ6WH',17),('47228135326','Leandra Emerson','laoreet@mollisdui.edu','HKM73VZG8AA',30),('14728098640','Kevyn Gutierrez','Pellentesque.habitant@Duis.org','NGO94YSJ7VG',72);
+INSERT INTO Usuario (cpf,nome,email,senha,idEndereco) VALUES ('88467552080','Fulton Miranda','eros.non@semper.edu','GLV22ASI5BK',10),('39180404370','Idona Skinner','odio@diamProin.net','YJR23BWI5QL',55),('36480591747','Marsden Warren','mattis.ornare.lectus@pedenec.edu','IIK44SYS0NJ',29),('96437665788','Olivia Briggs','ac.eleifend.vitae@enim.net','WGL14UKO9ZC',65),('23678529181','Jena Duke','laoreet.libero@orciluctus.org','GTH32QCI3IS',42),('21402442512','Brody Lancaster','lorem.eget@urna.com','MSY35BLA6NZ',17),('45622501924','Lev Anthony','eu@malesuadaaugueut.net','SOC21XBU4DO',60),('32809686509','Wallace Hutchinson','vitae@etmalesuada.com','WNP77NQC2BU',70),('01687251582','Alexander Kirby','ac@vitaepurusgravida.ca','FEF32LJM1HA',31),('27827151739','Leo Woodard','Donec@Sedpharetra.ca','QZG15XVB1PG',51);
+INSERT INTO Usuario (cpf,nome,email,senha,idEndereco) VALUES ('72359620793','Megan Whitehead','gravida.nunc.sed@erat.com','SHV02YSQ9JO',100),('62896253379','Sandra Gibbs','nisi.Cum@MaurisnullaInteger.edu','OMU96IGP8BM',78),('15555701741','Gavin Levine','Aliquam.ornare@sedliberoProin.net','KMI89DSX1IC',12),('34827718314','Elliott Phelps','enim@enimNunc.org','YIZ45SNV5LZ',96),('31975256514','Aiko Hansen','lectus.rutrum@risusodioauctor.edu','BWP32SXC5OL',24),('55506755026','Nathaniel Roberts','eu@nonantebibendum.ca','SCC12WSG0GG',15),('32947694477','Michelle Schultz','imperdiet.ullamcorper.Duis@insodaleselit.ca','YTB24TGA8VG',55),('30459787169','Willa Berry','a.sollicitudin@Loremipsumdolor.com','QKJ31YWK3NB',43),('67346346102','Mara Curry','Curabitur@nequeNullam.edu','PNR35QYZ5FR',24),('77686074407','Berk Santos','aptent@arcu.co.uk','JLV11EGP3FB',60);
+INSERT INTO Usuario (cpf,nome,email,senha,idEndereco) VALUES ('21973033435','Elizabeth Gilbert','lobortis.nisi.nibh@tincidunt.ca','VBE06XXC9MU',48),('11963301946','Audrey Ferrell','lacus@Nullamvitaediam.org','MJN61OTD7XG',72),('40767847094','Ahmed Fitzgerald','posuere.cubilia@ultriciesligulaNullam.ca','PKV73QZN4BT',51),('44267242794','Barry Key','turpis.vitae@atlibero.com','NVW84ERV3EI',1),('00556042258','Vance James','eleifend.egestas@Duiscursusdiam.net','GOF62NCE1CG',51),('98050536275','Conan Fulton','Curabitur.consequat@Sednuncest.org','STG35JDQ3PR',68),('34659181692','Henry Donovan','tellus@IncondimentumDonec.co.uk','VXH42UAJ5CR',69),('77936726952','Hector Doyle','arcu.Aliquam.ultrices@musAeneaneget.org','UGD37RJY6QR',50),('66118284000','Olivia Spencer','euismod.et@Nullafacilisi.co.uk','JEM28JAT3TW',30),('16064461224','Wyatt Hyde','arcu@Sed.com','FOW38IEG7MA',100);
+INSERT INTO Usuario (cpf,nome,email,senha,idEndereco) VALUES ('33109020269','Orla Stein','pharetra@accumsanlaoreetipsum.net','LKI65MNP2KU',95),('66196219367','Vladimir Ellison','ullamcorper.viverra@sagittis.edu','QQD58IFD4SM',3),('78027387198','Ronan Fitzpatrick','eu.tempor.erat@enimSednulla.co.uk','MJJ43JCK3IP',11),('80520664992','Faith Roberts','in@aliquetPhasellus.co.uk','UZG69BON5PG',57),('37275452184','Anthony Barnes','fermentum@nuncullamcorpereu.net','XHC90OHS4EE',75),('53067916651','Norman Obrien','leo@quis.net','BIN26LEQ8QB',29),('95982841396','Eve Terrell','massa@vel.edu','HXQ37MUC2UX',73),('69858448126','Winifred Mccormick','vitae@malesuadafames.org','XNC83DME1RD',92),('27605252868','Quyn Hebert','urna.nec.luctus@magnaaneque.ca','IDW21AMD2GD',67),('38636154259','Hunter Zamora','Vivamus.nisi@estacfacilisis.net','WVK02TMQ8PT',52);
+INSERT INTO Usuario (cpf,nome,email,senha,idEndereco) VALUES ('91712766508','Haviva Tanner','et.arcu.imperdiet@variuset.ca','XBO78IDN6NW',94),('91948046599','Winifred Le','elementum.purus.accumsan@dignissimMaecenas.org','PUH70QXK6RC',81),('70869299317','Amir Lane','venenatis@Nullam.co.uk','YXG87BOK9PT',54),('86621011063','Karina Deleon','ipsum.dolor.sit@Etiam.ca','DMZ77YWY8GZ',72),('61165415825','Jeremy Palmer','elit.pede.malesuada@interdum.ca','MRD16RDF1PK',78),('74063531496','Gregory Cochran','augue.malesuada.malesuada@velitCras.net','ZHZ52HXC5DI',43),('52927578083','Cally Allen','in@magnaCrasconvallis.ca','HIT95WBB4LC',62),('00151307497','Angelica Lara','blandit.Nam@risusDuisa.co.uk','LFH66QER1ZV',5),('69712517576','Kaseem Long','vitae.aliquet.nec@molestiesodales.ca','BLX84TOS3NX',89),('68515635020','Clare Foster','quam.a.felis@Namtempordiam.edu','WAP02KMZ0MW',14);
+INSERT INTO Usuario (cpf,nome,email,senha,idEndereco) VALUES ('36530463471','Cheyenne York','egestas@estNunc.net','KEL39TTY0HG',94),('14891172126','Keane Mccray','bibendum.sed@Suspendisseseddolor.org','AUG76SPQ3HJ',16),('00746089787','Florence Estes','Proin.nisl@nequesed.co.uk','OLV64XIB6SN',24),('45628676449','Philip Molina','sit.amet.ornare@adipiscingelit.ca','DPA54KEY5JY',45),('79727590759','Kendall Landry','lorem.lorem.luctus@erat.net','ZRV04VLH4ZA',73),('29012771813','Zenaida Watkins','Duis.mi@CuraeDonectincidunt.co.uk','NSA38PIF5DY',79),('90876482667','Dara Mccray','malesuada.Integer.id@pharetra.ca','PSD77ZFY8SS',89),('41009419232','Harrison Hernandez','ut@ametconsectetuer.net','BTJ09UCN9YJ',71),('51498342516','Justin Byers','amet@id.net','ZCC17WZI9FI',10),('06663496605','Lyle Waller','dignissim.lacus.Aliquam@Suspendisse.ca','VQJ69BOW7QM',34);
+INSERT INTO Usuario (cpf,nome,email,senha,idEndereco) VALUES ('55512624575','Dylan Park','Nam.ac@Vivamusnisi.com','WWK08GMJ0FA',22),('55583759618','Jillian Marks','hendrerit.neque.In@tinciduntdui.edu','WYV57IND1UI',49),('56624950475','Elmo Russo','enim.consequat.purus@Aliquam.com','NUI72TOR4UI',87),('10531102743','Shafira Myers','dolor.sit.amet@magnisdis.net','IQB13WNB8CG',84),('87874962060','Rogan Eaton','adipiscing.non.luctus@Intinciduntcongue.edu','XFY59CDA4XR',88),('53331188065','Reagan David','eros.Proin.ultrices@risusMorbimetus.co.uk','XRL97YPD4YA',95),('89407022679','Walker Barber','felis.adipiscing@MorbivehiculaPellentesque.org','QXK57VGL6XN',69),('37564657749','Althea Maxwell','pellentesque.a@elementum.net','LUT57GZY5CN',74),('01594204637','Noel Mclaughlin','nibh.Phasellus@mi.edu','TUZ10ZQT7FX',81),('15986688975','Igor Meyers','quam.elementum.at@ornareegestasligula.edu','QHW39LIN9NE',68);
+
+-- Inserindo Telefones (100)
+INSERT INTO Telefone (num_tel,idUsuario) VALUES ('(61) 68043-6277',48),('(52) 52141-4086',48),('(62) 65211-5540',48),('(40) 42444-4446',51),('(31) 38764-3261',27),('(78) 02760-4459',96),('(90) 46683-6422',7),('(75) 47335-5716',68),('(74) 79772-5662',68),('(19) 70904-7123',84);
+INSERT INTO Telefone (num_tel,idUsuario) VALUES ('(10) 93685-6031',78),('(15) 30547-9917',21),('(99) 51816-4512',61),('(10) 21808-3059',71),('(03) 22634-3706',12),('(72) 49200-4690',11),('(97) 19389-6646',25),('(89) 97576-5285',4),('(40) 39171-4104',77),('(79) 56811-9712',21);
+INSERT INTO Telefone (num_tel,idUsuario) VALUES ('(85) 89544-5544',48),('(65) 55721-4755',61),('(05) 83697-9199',90),('(71) 35531-5485',43),('(15) 54266-6718',73),('(52) 66611-7947',33),('(46) 16896-2069',70),('(68) 68502-5512',80),('(69) 81914-2427',85),('(77) 57400-2865',80);
+INSERT INTO Telefone (num_tel,idUsuario) VALUES ('(03) 93296-4420',61),('(13) 13011-8949',58),('(88) 20981-5155',2),('(82) 27128-5710',43),('(19) 26083-5360',61),('(55) 68541-1597',76),('(20) 95580-6366',84),('(51) 46096-9077',86),('(90) 41447-7196',29),('(03) 95377-2256',19);
+INSERT INTO Telefone (num_tel,idUsuario) VALUES ('(24) 12420-3490',19),('(84) 37519-7804',7),('(51) 66781-2889',97),('(81) 34763-8893',87),('(17) 35385-5159',43),('(62) 03905-4824',82),('(07) 99859-2201',33),('(78) 14335-1913',51),('(17) 97260-5131',22),('(26) 93094-0156',25);
+INSERT INTO Telefone (num_tel,idUsuario) VALUES ('(96) 28667-8472',80),('(51) 40756-9978',71),('(93) 61920-7955',65),('(60) 26258-8516',89),('(31) 76989-5748',16),('(07) 65575-2624',86),('(07) 34607-0714',28),('(86) 21814-3127',29),('(89) 41670-4806',91),('(06) 47143-8471',29);
+INSERT INTO Telefone (num_tel,idUsuario) VALUES ('(39) 49722-2500',82),('(60) 65768-5429',14),('(75) 02257-7587',34),('(78) 84913-2384',71),('(91) 48996-1253',7),('(21) 74734-6266',79),('(41) 78397-0569',20),('(33) 32794-6163',47),('(24) 80301-2051',87),('(22) 91155-5753',18);
+INSERT INTO Telefone (num_tel,idUsuario) VALUES ('(99) 56893-0977',57),('(06) 96288-1736',86),('(14) 30048-9926',93),('(50) 51705-7336',61),('(30) 65517-2556',12),('(09) 00040-8793',84),('(18) 87244-4511',10),('(07) 74335-3680',8),('(05) 69645-7469',55),('(89) 92743-8290',6);
+INSERT INTO Telefone (num_tel,idUsuario) VALUES ('(36) 38100-1729',78),('(13) 88534-2325',28),('(42) 05189-6368',98),('(43) 63795-4409',89),('(66) 49596-9275',19),('(34) 99156-8763',44),('(77) 74305-1172',30),('(73) 43519-6049',54),('(34) 19602-8583',35),('(78) 19834-3790',45);
+INSERT INTO Telefone (num_tel,idUsuario) VALUES ('(63) 27005-1730',57),('(24) 10002-6435',38),('(33) 10329-1594',30),('(36) 73543-7961',71),('(17) 10676-5652',63),('(38) 72163-6110',64),('(76) 55540-3667',33),('(41) 39754-3983',35),('(91) 68792-2320',64),('(30) 37882-2726',14);
+
+-- Inserindo Organizadores (10)
+INSERT INTO Organizador (compr_ident,compr_end,idUsuario) VALUES ('/home/Jillian/comprovante_identidade.pdf','/home/Colby/comprovante_endereço.pdf',29),('/home/Axel/comprovante_identidade.pdf','/home/Kristen/comprovante_endereço.pdf',52),('/home/Sonya/comprovante_identidade.pdf','/home/Yen/comprovante_endereço.pdf',26),('/home/Omar/comprovante_identidade.pdf','/home/Colin/comprovante_endereço.pdf',4),('/home/Uma/comprovante_identidade.pdf','/home/Hannah/comprovante_endereço.pdf',61),('/home/Jameson/comprovante_identidade.pdf','/home/Gemma/comprovante_endereço.pdf',37),('/home/Neville/comprovante_identidade.pdf','/home/Darryl/comprovante_endereço.pdf',48),('/home/Nasim/comprovante_identidade.pdf','/home/Shea/comprovante_endereço.pdf',70),('/home/Dennis/comprovante_identidade.pdf','/home/Kiara/comprovante_endereço.pdf',51),('/home/Brittany/comprovante_identidade.pdf','/home/Yeo/comprovante_endereço.pdf',30);
+
+-- Inserindo Condutores (20)
+INSERT INTO Condutor (tipo_condutor,associacao,idUsuario) VALUES ('Professor','UFRGS',82),('Professor','UFSC',60),('Formando','UFSM',56),('Formando','USP',86),('Professor','UFSC',75),('Palestrante',NULL,89),('Professor','USP',21),('Ator','Grupo Teatral Abelhinha Feliz',32),('Ator','Grupo Teatral Nuvem',72),('Palestrante','UFSM',57);
+INSERT INTO Condutor (tipo_condutor,associacao,idUsuario) VALUES ('Ator', NULL,62),('Cantor','Banda Titãs',73),('Ator','Grupo Teatral Palácio',61),('Professor','USP',55),('Professor','UFSM',78),('Professor','UFSC',39),('Cantor','Banda Legião Urbana',49),('Palestrante',NULL,34),('Formando',NULL,38),('Cantor','Banda The Black Eyed Peas',76);
+
+-- Inserindo Participantes (90)
+INSERT INTO Participante (idUsuario) VALUES (1),(2),(3),(5),(6),(7),(8),(9),(10);
+INSERT INTO Participante (idUsuario) VALUES (11),(12),(13),(14),(15),(16),(18),(19),(20);
+INSERT INTO Participante (idUsuario) VALUES (21),(22),(24),(25),(26),(27),(28),(29),(30);
+INSERT INTO Participante (idUsuario) VALUES (31),(32),(34),(35),(36),(37),(38),(39),(40);
+INSERT INTO Participante (idUsuario) VALUES (41),(42),(43),(44),(45),(46),(47),(49),(50);
+INSERT INTO Participante (idUsuario) VALUES (51),(53),(54),(55),(56),(57),(58),(59),(60);
+INSERT INTO Participante (idUsuario) VALUES (61),(62),(63),(64),(65),(66),(68),(69),(70);
+INSERT INTO Participante (idUsuario) VALUES (71),(73),(74),(75),(76),(77),(78),(79),(80);
+INSERT INTO Participante (idUsuario) VALUES (82),(83),(84),(85),(86),(87),(88),(89),(90);
+INSERT INTO Participante (idUsuario) VALUES (91),(92),(93),(94),(95),(96),(97),(98),(100);
+
+-- Inserindo Funcionarios (10)
+INSERT INTO Funcionario (nome,setor,chefe) VALUES ('Suki Finley','Validação de Documentos','Clark Chan'),('Macey Rivers','Fiscalização','Rogan Monroe'),('Ifeoma Harper','Fiscalização','Brynne Sims'),('Nicholas Garner','Validação de Documentos','Breanna Blackwell'),('Katelyn Tran','Treinamento','Owen Campos'),('Harlan Gilmore','Fiscalização','Dustin Herman'),('Jin Vance','Validação de Documentos','Kessie Woodard'),('Talon Solis','Validação de Documentos','Rajah Middleton'),('Chester Finch','Fiscalização','Regan Mcleod'),('Rashad Cole','Validação de Documentos','Sydnee French');
+
+-- Inserindo Categorias (10)
+INSERT INTO Categoria (nome,area) VALUES ('Aniversáio','Criança'),('Formatura','Engenharia de Computação'),('Show','Rock'),('Palestra','Cozinha'),('Tecnologia','Programação'),('Vacinação','COVID-19'),('Saúde','Nutrição'),('Festa','Fantasia'),('Festa','Eletrônica'),('Show','Sertanejo');
+
+-- Inserindo Eventos (10)
+INSERT INTO Evento (nome,valor,data_hora_realizacao,data_hora_criacao,privacidade,idEndereco) VALUES ('Festa na Piscina',NULL,'2021-04-02 20:33:42-03','2020-04-13 09:48:55-03','público',17),('Aniversário da Clara','102.41','2020-03-08 08:23:31-03','2020-11-29 02:19:18-03','privado',53),('Show do Titãs','75.32','2020-06-08 23:11:18-03','2020-12-14 19:41:19-03','público',57),('Cozinhando como um mestre','260.83','2021-11-12 18:33:33-03','2020-11-30 07:11:03-03','público',48),('Programando sem limites','244.78','2021-08-09 14:14:05-03','2020-07-01 11:30:47-03','privado',84),('Vacinação Coronavac 2021',NULL,'2021-09-29 02:37:33-03','2021-04-21 09:24:38-03','privado',72),('Rave na laje',NULL,'2019-11-23 09:41:46-03','2021-01-27 04:49:58-03','privado',43),('Tornando-se vegano','137.33','2019-12-13 06:48:25-03','2021-11-14 21:24:08-03','público',81),('Festa de halloween','89.25','2020-09-16 03:36:37-03','2020-09-03 19:44:22-03','público',77),('Chitãozinho e xororó','145.68','2020-03-09 05:57:05-03','2020-08-04 15:04:07-03','público',87);
+
+-- Inserindo Serviços (10)
+INSERT INTO Servico (nome,empresa,descricao) VALUES ('Som','Leonardo DJ','Serviço de som para animar a festa. Mixagens serão conduzidas pelo Leonardo DJ.'),('Iluminação','Vagalume noturno','Brilhando a sua festa'),('Buffet','Comida dos sonhos','Os melhores pratos da regiãi'),('Infraestrutura','Palco erguido',NULL),('Climatização','Pinguim com frio',NULL),('Fogos','Ilumina Ceu','Fazendo obra de arte no céu'),('Bebida','Nóis trupica mais não cai','Cachaça, Vodka, Wiski e água'),('Enfermaria','SUS','Vamos acabar com essa pandemia!!!'),('Cozinha','Panela Velha',NULL),('Brinquedos','Criança Feliz','Pula pula, piscina de bolinha e muito mais');
+
+-- Inserindo Certificados (20)
+INSERT INTO Certificado (carga_hr,tipo_cert,data_hora_emissao,autenticacao_eletr,idUsuario,idEvento) VALUES ('0.31','organização','2021-01-28 21:01:03-03','FRB68OVZ5DQ48Y370600PF17V1J621','37','8'),('0.43','organização','2021-08-02 19:23:38-03','QGD84UHT9NM76W270513YJ24Y0E126','30','9'),('0.97','organização','2021-05-11 13:54:36-03','TCV12MUP3JP96T669925JR16L9M190','52','3'),('0.44','organização','2021-01-22 23:12:50-03','XUC14STR5PY70J931541UP29K5D265','52','5'),('0.74','organização','2020-03-11 12:48:40-03','ZPI93PQA1QS00J909393EV99X6A777','51','6'),('0.97','organização','2020-10-18 10:49:38-03','SZX18TCJ6GN93V610198TX67C9V852','30','10'),('0.22','organização','2021-07-06 14:51:24-03','PJN99PFL3JH82Z285854LD50G6D525','51','1'),('0.92','organização','2020-04-25 02:09:45-03','GJW62KBQ6WX71B382119ZR45Y1X067','29','5'),('0.13','organização','2021-07-02 17:05:49-03','LUH49ZXH7PO42T953896TN58W0B312','48','5'),('0.35','organização','2021-04-16 03:58:36-03','HJP54BVW1GV29U463202ZX59Z6Z018','30','6');
+INSERT INTO Certificado (carga_hr,tipo_cert,data_hora_emissao,autenticacao_eletr,idUsuario,idEvento) VALUES ('0.85','condução','2020-07-26 09:49:53-03','GER39ULF1CU38P621953WC00R1I168','49','3'),('0.12','condução','2020-03-22 08:01:58-03','MUQ40KCO0SS07P545126VJ89H5Q713','56','9'),('0.70','condução','2021-02-06 21:31:11-03','XNN42OCB3FS51C280740JO33A2E059','32','1'),('0.27','condução','2020-09-05 06:12:51-03','JMT22GQJ7MT76K189417BX61H0I930','34','2'),('0.32','condução','2019-12-16 13:12:50-03','TXR27TIJ8KR03O610540CH93S7Z327','57','6'),('0.82','condução','2020-05-10 15:32:01-03','TDN96ZQG0XM04O866569QD06N4J786','72','9'),('0.17','condução','2020-09-14 18:06:39-03','WAD00RBU4WB01X009447EP63Y1H328','21','4'),('0.33','condução','2020-11-12 02:16:39-03','QHM84NUZ2UF07L153432IZ62N0G275','60','1'),('0.29','condução','2020-10-26 12:22:50-03','LNZ60FXI3YX00G427703CO40D8Z015','55','9'),('0.69','condução','2020-09-27 11:42:46-03','TBP85ERZ4AG96J619296VI93R0O166','49','9');
+INSERT INTO Certificado (carga_hr,tipo_cert,data_hora_emissao,autenticacao_eletr,idUsuario,idEvento) VALUES ('0.55','participação','2020-03-06 07:38:53-03','YFL83JGU1HE94F757556FY91X9R944','56','5'),('0.07','participação','2020-05-17 22:29:08-03','LCS92GWV4VQ38P645432MP57D8Y039','97','6'),('0.44','participação','2020-10-18 15:16:33-03','WUU80UUE7IU59O183113WN48J9P403','97','8'),('0.09','participação','2021-08-07 04:27:10-03','LJK99CSO7FC06A958149RZ64I0D379','83','7'),('0.34','participação','2021-03-11 03:33:46-03','YFR67NLZ6EZ82K464945ZE84S1A384','69','1'),('0.44','participação','2021-11-18 17:45:35-03','VDA11EUQ8YQ68Q694804ZL21W0D475','79','3'),('0.22','participação','2020-07-12 05:59:53-03','DII29OCQ9HH68C222179VE02F0D893','45','2'),('0.38','participação','2020-09-07 09:02:56-03','USF05YOT1BO57S248691CX59Z8Q626','6','5'),('0.18','participação','2020-06-20 07:18:49-03','ANG16KTK5RX41H071666DC90X6Z875','12','5'),('0.06','participação','2021-07-07 18:13:46-03','DIK21COZ8QB39J102538VN06O8K470','73','6');
+INSERT INTO Certificado (carga_hr,tipo_cert,data_hora_emissao,autenticacao_eletr,idUsuario,idEvento) VALUES ('0.78','participação','2020-10-23 00:32:29-03','JSM01HHL6TV97N093982TF11V8I147','57','8'),('0.69','participação','2020-12-09 06:56:46-03','ZZI33QPZ9DY35U609561UH24U6V213','62','3'),('0.78','participação','2020-02-26 03:54:20-03','KKW12RLK6KN13J860759QP90D7D233','58','2'),('0.35','participação','2020-10-26 21:54:49-03','XQE62LKE7EV52X097916VJ00A7Q627','11','3'),('0.66','participação','2020-09-19 22:38:31-03','ZUI18ACV0AV04U315860AO20C5D707','100','10'),('0.46','participação','2019-12-21 03:41:33-03','QEG28JRR2OU75G057030JJ79P0M852','20','5'),('0.53','participação','2021-06-19 04:35:43-03','MCT04HAQ5GO56O510863BK57J3H284','6','8'),('0.40','participação','2020-03-07 06:32:03-03','GUR29JDK4BP25F993722RX20A7O593','41','9'),('0.58','participação','2021-11-15 16:51:54-03','PZG78WKO0EY06U371988ND39F3C818','41','4'),('0.17','participação','2021-04-03 20:30:21-03','KRF35EXZ6YW28E368400TJ54R0C664','10','7');
+INSERT INTO Certificado (carga_hr,tipo_cert,data_hora_emissao,autenticacao_eletr,idUsuario,idEvento) VALUES ('0.68','participação','2020-09-29 21:08:43-03','SSD67SYM6XP19W253273JM84N7M234','6','9'),('0.96','participação','2021-10-06 22:47:27-03','GAD52RYO6SD37T829623ZF17W9U292','63','10'),('0.82','participação','2020-05-08 23:39:33-03','SJM07FOI8XC58U053985XC48O8Q302','65','7'),('0.57','participação','2021-05-08 15:25:33-03','TEK59TJW4JZ82I165045KC86M9L193','10','10'),('0.80','participação','2021-06-13 14:30:31-03','OFG40NJD8OG03A346215ZH02G6D100','66','6'),('0.51','participação','2020-08-19 10:13:50-03','FVE17KAY0YK12V822019HP70Z4L222','63','5'),('0.94','participação','2019-12-10 15:09:33-03','IJE53TPO4SW37F756101PV59B9E766','27','8'),('0.36','participação','2020-01-21 17:08:46-03','HQX54QZI4XJ18X307891OA86I1D099','92','7'),('0.69','participação','2020-03-09 10:14:39-03','OAM80DLA2EA96Z244604AT78E4Z183','43','8'),('0.06','participação','2021-03-17 00:55:01-03','HLU62IHS2GJ42W386636NY25U8N692','95','7');
+INSERT INTO Certificado (carga_hr,tipo_cert,data_hora_emissao,autenticacao_eletr,idUsuario,idEvento) VALUES ('0.05','participação','2021-10-30 04:21:59-03','ITH42IHL0KH46R261028EW27G6Y155','89','6'),('0.43','participação','2020-12-27 01:19:41-03','EWV62NJV5ZO36G155989TL33O4F558','50','1'),('0.51','participação','2020-08-13 20:28:18-03','SXT31RRJ6MO97I689375JE73B0D535','19','10'),('0.21','participação','2021-11-16 06:53:21-03','RDQ37OVQ1CA09W553770LV35G8U412','84','10'),('0.34','participação','2021-03-12 17:27:48-03','BGG69WHI9BE57K803175IC56R3Y118','71','9'),('0.12','participação','2020-08-09 13:37:06-03','XZH04ITB9YN36R567463SM11Q2R247','12','6'),('0.52','participação','2021-08-16 14:04:27-03','ZOG20SAT5YE97C806216UI18L0A419','53','10'),('0.46','participação','2021-04-04 23:31:53-03','FKF12GMB5WD06H848890KO36K8T429','65','1'),('0.83','participação','2020-07-26 04:14:45-03','OSN88PKD8QB40F927918LQ28R5S907','91','9'),('0.47','participação','2020-06-17 17:37:04-03','BWR01FVT9YS91I285973FP95R3V589','44','6');
+INSERT INTO Certificado (carga_hr,tipo_cert,data_hora_emissao,autenticacao_eletr,idUsuario,idEvento) VALUES ('0.06','participação','2021-02-07 02:36:18-03','UHY77JOP9TM37E654188MZ26V9Q015','55','10'),('0.12','participação','2021-03-06 07:25:14-03','EBJ65NZU5VP85C839516OU20W4G117','18','1'),('0.76','participação','2021-07-14 18:56:24-03','JUL04YMO6II68K965041KP03Z4V754','14','10'),('0.84','participação','2021-03-03 10:57:28-03','USU02BHF9MG40F910150BB97K2E521','70','2'),('0.52','participação','2021-06-20 20:42:46-03','KYZ05OMC1QN05L437349DD03I8D035','13','6'),('0.48','participação','2020-12-22 05:13:23-03','OEZ40SDD8ZU00I725564KJ31Z5W277','19','2'),('0.37','participação','2021-07-11 16:33:45-03','PHV75NZX0IN74I771867YQ79O7U758','50','8'),('0.32','participação','2021-03-20 15:28:11-03','VWT84CNI9IN17M052991PY94V6L428','15','6'),('0.15','participação','2020-03-21 21:13:29-03','SPT33NRX2RU05P076581HD66H6Y592','95','6'),('0.60','participação','2020-03-14 05:23:49-03','BDD48SLC5PA09T598891XT88K8P143','47','7');
+INSERT INTO Certificado (carga_hr,tipo_cert,data_hora_emissao,autenticacao_eletr,idUsuario,idEvento) VALUES ('0.96','participação','2020-04-20 03:30:31-03','ETR73ZOE9TC89N205164ZE57A5K936','69','2'),('0.31','participação','2019-11-28 18:39:26-03','BJW64LXV5MZ77E425417OX77W4A194','42','3'),('0.18','participação','2020-07-05 01:39:34-03','WNF48YUF2WS67G113111LZ57U2J444','66','9'),('0.11','participação','2020-11-20 21:10:15-03','LMD87HQY5SN88B289678XT49W6X241','2','5'),('0.30','participação','2020-08-15 05:15:09-03','TZH34TFT3DJ58C616770VE79E3Q578','7','3'),('0.19','participação','2021-10-17 01:15:14-03','SKE43JAY2IH12W621822LP98A8O163','91','9'),('0.92','participação','2020-07-02 10:31:54-03','KDY63JBR7UN52M531391GF34B7J067','13','1'),('0.54','participação','2020-02-24 23:10:52-03','YSK50URS3VK66T468510BK89F4Y515','56','7'),('0.47','participação','2021-08-14 00:12:35-03','XKT21WQC1NV04V095978QN64N7S139','90','5'),('0.76','participação','2020-01-12 00:21:48-03','ZDI66TTB3WM11W867325VV16U1S337','26','6');
+
+-- Inserindo Relação de Organização (10)
+INSERT INTO Organizacao (idOrganizador,idEvento) VALUES ('51',1),('26',2),('61',3),('52',4),('26',5),('29',6),('37',7),('29',8),('51',9),('29',10);
+
+-- Inserindo Relação de Condução (20)
+INSERT INTO Conducao (idCondutor,idEvento) VALUES ('21',1),('60',2),('73',3),('55',4),('82',5),('78',6),('86',7),('78',8),('38',9),('34',10);
+INSERT INTO Conducao (idCondutor,idEvento) VALUES ('34',3),('76',3),('55',3),('89',5),('78',7),('72',6),('73',6),('76',6),('32',6),('82',10);
+
+-- Inserindo Relação de Inscrição (200)
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('84',4,'pendente'),('10',10,'pago'),('94',9,'pendente'),('94',1,NULL),('40',2,'pago'),('82',9,'pago'),('50',8,'pendente'),('29',10,'pendente'),('30',5,'pendente'),('84',8,'pendente');
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('29',1,NULL),('92',6,NULL),('68',4,'pendente'),('26',4,'pendente'),('59',4,'pago'),('29',7,NULL),('3',8,'pendente'),('46',7,NULL),('65',6,NULL),('80',6,NULL);
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('45',8,'pendente'),('1',8,'pago'),('83',7,NULL),('42',10,'pendente'),('61',1,NULL),('55',5,'pago'),('19',9,'pendente'),('54',6,NULL),('95',8,'pago'),('61',5,'pendente');
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('61',2,'pendente'),('86',1,NULL),('13',4,'pago'),('56',9,'pago'),('2',8,'pendente'),('51',1,NULL),('46',8,'pendente'),('11',7,NULL),('55',3,'pendente'),('69',9,'pago');
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('91',6,NULL),('66',7,NULL),('58',9,'pendente'),('12',4,'pendente'),('68',7,NULL),('44',3,'pendente'),('54',2,'pendente'),('63',7,NULL),('95',1,NULL),('34',1,NULL);
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('63',9,'pago'),('64',9,'pendente'),('76',1,NULL),('75',4,'pendente'),('8',8,'pago'),('77',6,NULL),('78',7,NULL),('19',4,'pago'),('44',6,NULL),('49',10,'pendente');
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('6',10,'pago'),('73',6,NULL),('37',5,'pendente'),('70',7,NULL),('15',10,'pago'),('3',4,'pago'),('55',7,NULL),('28',8,'pendente'),('39',8,'pago'),('90',7,NULL);
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('92',10,'pago'),('65',7,NULL),('74',5,'pago'),('63',10,'pendente'),('12',7,NULL),('21',3,'pendente'),('53',3,'pago'),('76',5,'pago'),('87',6,NULL),('98',9,'pago');
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('5',9,'pago'),('59',9,'pago'),('76',4,'pago'),('43',5,'pago'),('50',6,NULL),('6',9,'pago'),('84',5,'pago'),('5',2,'pendente'),('90',10,'pendente'),('100',2,'pendente');
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('49',6,NULL),('58',8,'pendente'),('74',4,'pago'),('35',2,'pendente'),('56',2,'pago'),('1',6,NULL),('92',4,'pendente'),('96',2,'pendente'),('46',1,NULL),('88',5,'pago');
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('47',10,'pago'),('12',5,'pago'),('89',5,'pendente'),('92',5,'pendente'),('44',8,'pago'),('84',10,'pago'),('70',10,'pendente'),('20',6,NULL),('74',2,'pendente'),('59',2,'pago');
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('12',8,'pago'),('80',8,'pago'),('26',8,'pendente'),('41',10,'pendente'),('21',4,'pago'),('62',2,'pago'),('50',3,'pendente'),('40',1,NULL),('29',2,'pendente'),('62',6,NULL);
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('49',7,NULL),('31',2,'pendente'),('7',5,'pendente'),('37',1,NULL),('82',3,'pago'),('76',6,NULL),('63',4,'pendente'),('90',5,'pendente'),('22',8,'pago'),('12',10,'pago');
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('56',8,'pago'),('47',5,'pendente'),('82',6,NULL),('79',9,'pendente'),('37',3,'pendente'),('36',3,'pago'),('3',7,NULL),('58',6,NULL),('22',10,'pago'),('25',7,NULL);
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('100',8,'pago'),('45',5,'pago'),('66',1,NULL),('14',6,NULL),('21',5,'pago'),('18',6,NULL),('36',7,NULL),('64',5,'pago'),('45',10,'pendente'),('60',6,NULL);
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('20',3,'pendente'),('40',3,'pendente'),('84',7,NULL),('46',2,'pago'),('31',9,'pago'),('10',4,'pendente'),('8',5,'pendente'),('57',8,'pendente'),('32',5,'pago'),('45',1,NULL);
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('39',1,NULL),('98',6,NULL),('20',1,NULL),('16',2,'pendente'),('86',2,'pendente'),('2',4,'pendente'),('1',9,'pendente'),('14',1,NULL),('37',9,'pago'),('56',6,NULL);
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('15',7,NULL),('35',7,NULL),('92',9,'pendente'),('26',3,'pago'),('28',5,'pago'),('12',6,NULL),('53',6,NULL),('16',9,'pendente'),('93',2,'pendente'),('25',6,NULL);
+INSERT INTO Inscricao (idParticipante,idEvento,situacao) VALUES ('50',9,'pendente'),('32',6,NULL),('55',4,'pendente'),('86',3,'pendente'),('32',3,'pago'),('97',8,'pago'),('70',8,'pendente'),('40',9,'pago'),('24',8,'pago'),('42',8,'pendente');
+
+-- Inserindo Relação de Interesse (50)
+INSERT INTO Interesse (idParticipante,idCategoria) VALUES ('18',3),('87',2),('71',9),('10',8),('73',2),('62',10),('40',8),('91',4),('3',4),('91',1);
+INSERT INTO Interesse (idParticipante,idCategoria) VALUES ('9',6),('74',1),('57',10),('66',8),('61',9),('3',9),('37',7),('85',7),('65',9),('28',6);
+INSERT INTO Interesse (idParticipante,idCategoria) VALUES ('19',6),('69',5),('86',1),('27',6),('50',1),('78',7),('25',1),('11',7),('92',6),('36',9);
+INSERT INTO Interesse (idParticipante,idCategoria) VALUES ('34',3),('11',4),('46',5),('2',9),('16',6),('74',3),('49',5),('32',10),('44',9),('22',10);
+INSERT INTO Interesse (idParticipante,idCategoria) VALUES ('55',9),('74',8),('40',7),('64',7),('2',10),('45',1),('54',7),('98',8),('9',10),('74',2);
+
+-- Inserindo Relação de Pertence (10)
+INSERT INTO Pertence (idCategoria,idEvento) VALUES (5,1),(7,2),(2,3),(3,4),(1,5),(10,6),(9,7),(8,8),(5,9),(1,10);
+
+-- Inserindo Relação de Validacao (12)
+INSERT INTO Validacao (idFuncionario,idOrganizador,data_hora,aprovado) VALUES (3,37,'2020-08-10 14:05:06-3',FALSE),(1,51,'2021-06-26 17:32:31-3',FALSE),(9,51,'2021-10-22 02:32:50-3',FALSE),(5,61,'2020-07-30 10:33:37-3',TRUE),(4,4,'2021-08-12 19:40:31-3',FALSE),(1,61,'2020-07-19 09:01:44-3',FALSE),(1,30,'2020-12-06 03:54:37-3',FALSE),(8,26,'2020-05-03 10:11:52-3',TRUE),(9,4,'2020-01-21 14:06:41-3',TRUE),(9,51,'2021-06-07 08:00:12-3',TRUE),(1,37,'2020-10-10 14:05:06-3',TRUE),(2,30,'2020-12-20 03:54:37-3',TRUE);
+
+-- Inserindo Relação de Contratacao (10)
+INSERT INTO Contratacao (idEvento,idServico,data_hora_contratacao) VALUES ('10','5','2020-03-15 07:09:17-3'),('4','6','2021-10-25 10:25:52-3'),('6','6','2021-10-24 01:38:18-3'),('3','9','2020-03-06 20:05:49-3'),('1','7','2020-08-25 15:57:21-3'),('7','7','2020-12-13 08:23:53-3'),('1','1','2020-01-24 00:21:11-3'),('2','2','2021-07-12 01:39:53-3'),('5','5','2020-02-16 17:34:29-3'),('9','5','2020-10-09 07:44:54-3');
+
+
+SELECT * FROM Telefone;
+SELECT * FROM Usuario;
+SELECT * FROM Endereco;
+SELECT * FROM Participante;
+SELECT * FROM Organizador;
+SELECT * FROM Condutor;
+SELECT * FROM Funcionario;
+SELECT * FROM Categoria;
+SELECT * FROM Evento;
+SELECT * FROM Servico;
+SELECT * FROM Certificado;
+SELECT * FROM Organizacao;
+SELECT * FROM Conducao;
+SELECT * FROM Inscricao;
+SELECT * FROM Interesse;
+SELECT * FROM Pertence;
+SELECT * FROM Validacao;
+SELECT * FROM Contratacao;
